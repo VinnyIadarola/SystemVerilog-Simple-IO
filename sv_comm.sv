@@ -5,7 +5,7 @@ parameter int MAX_W = 1024;
 typedef logic [MAX_W-1:0] logic_max_t;
 
 /** Instantiate each DUT in/out as a sig_interface type
-  * These will be used to communicate between the sv and cpp
+  * These will be used to communicate between the SV and IO
   * Needed to we can create a array of signals to reference
 */
 interface sig_interface #(int W = 1);
@@ -126,7 +126,7 @@ function automatic void grabCommVals(
 
  
     read_file = $sformatf(
-        "%s/cpp_comm_cyc_%0d.txt",
+        "%s/IO_comm_cyc_%0d.txt",
         COMM_DIR_ABS_PATH,
         clk_cycle
     );
