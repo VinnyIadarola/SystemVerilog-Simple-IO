@@ -143,6 +143,11 @@ class sv_comm;
             key = line.substr(0, idx - 1);
             value_str = line.substr(idx + 1, line.len() - 1);
             value = value_str.atohex();
+
+            if(key == "END_OF_COMM" &&  value_str == "END_OF_COMM")
+                $finish;
+
+
             if (in_refs.exists(key))
                 in_refs[key].put(value);
             else
