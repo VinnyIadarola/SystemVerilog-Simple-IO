@@ -64,7 +64,7 @@ endclass
 ***                Verif Helper Functions               ***
 **********************************************************/
 //to make portable between CLI and MoDELSIm
-string COMM_DIR_ABS_PATH = "C:\\Users\\viada\\OneDrive\\Desktop\\Projects\\Interface Prototype\\comm_files\\";
+string COMM_DIR_ABS_PATH = "ERR pls replace with your abs path";
 
 
 function automatic int findChar(string s, byte c);
