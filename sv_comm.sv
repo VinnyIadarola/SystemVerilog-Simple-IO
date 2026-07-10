@@ -59,19 +59,6 @@ endclass
 **********************************************************/
 typedef sig_ref_base ref_map_t[string];
 
-class sv_comm;
-    ref_map_t in_refs;
-    ref_map_t out_refs;
-
-    function void add_in(string name, sig_ref_base signal_ref);
-        in_refs[name] = signal_ref;
-    endfunction
-
-    function void add_out(string name, sig_ref_base signal_ref);
-        out_refs[name] = signal_ref;
-    endfunction
-endclass
-
 
 /**********************************************************
 ***                Verif Communication Control          ***
@@ -111,64 +98,77 @@ function automatic void deleteOldFile(string file);
 endfunction
 
 
-function automatic void grabCommVals(
-    int clk_cycle,
-    ref ref_map_t inputs,
-    bit delete_read_file
-);
-    string read_file;
-    string line;
-    string value_str;
-    string key;
-    int fd;
-    int idx;
-    logic_max_t value;
+class sv_comm;
+    ref_map_t in_refs;
+    ref_map_t out_refs;
 
- 
-    read_file = $sformatf(
-        "%s/IO_comm_cyc_%0d.txt",
-        COMM_DIR_ABS_PATH,
-        clk_cycle
+    function void add_in(string name, sig_ref_base signal_ref);
+        in_refs[name] = signal_ref;
+    endfunction
+
+    function void add_out(string name, sig_ref_base signal_ref);
+        out_refs[name] = signal_ref;
+    endfunction
+
+    function void grabCommVals(
+        int clk_cycle,
+        bit delete_read_file
     );
-    fd = pollFile(read_file, "r");
+        string read_file;
+        string line;
+        string value_str;
+        string key;
+        int fd;
+        int idx;
+        logic_max_t value;
 
-    while ($fgets(line, fd) != 0) begin
-        idx = findChar(line, ":");
-        if (idx == -1) begin
-            $display("Skipping bad line with no colon: %s", line);
-            continue;
-        end 
+    
+        read_file = $sformatf(
+            "%s/IO_comm_cyc_%0d.txt",
+            COMM_DIR_ABS_PATH,
+            clk_cycle
+        );
+        fd = pollFile(read_file, "r");
 
-        key = line.substr(0, idx - 1);
-        value_str = line.substr(idx + 1, line.len() - 1);
-        value = value_str.atohex();
-        if (inputs.exists(key))
-            inputs[key].put(value);
-        else
-            $warning("Ignoring unknown input signal '%s'", key);
-    end
+        while ($fgets(line, fd) != 0) begin
+            idx = findChar(line, ":");
+            if (idx == -1) begin
+                $display("Skipping bad line with no colon: %s", line);
+                continue;
+            end 
 
-    $fclose(fd);
+            key = line.substr(0, idx - 1);
+            value_str = line.substr(idx + 1, line.len() - 1);
+            value = value_str.atohex();
+            if (in_refs.exists(key))
+                in_refs[key].put(value);
+            else
+                $warning("Ignoring unknown input signal '%s'", key);
+        end
 
-    if (delete_read_file)
-        deleteOldFile(read_file);
-endfunction
+        $fclose(fd);
+
+        if (delete_read_file)
+            deleteOldFile(read_file);
+    endfunction
 
 
 
 
-function automatic void writeCommVals(int clk_cycle, ref_map_t outputs);
-    string write_file;
-    int fd;
+    function void writeCommVals(int clk_cycle);
+        string write_file;
+        int fd;
 
-    write_file = $sformatf(
-        "%s/sv_comm_cyc_%0d.txt",
-        COMM_DIR_ABS_PATH, 
-        clk_cycle
-    );
+        write_file = $sformatf(
+            "%s/sv_comm_cyc_%0d.txt",
+            COMM_DIR_ABS_PATH, 
+            clk_cycle
+        );
 
-    fd = pollFile(write_file, "w");
-    foreach (outputs[key])
-        $fdisplay(fd, "%s:%0h", key, outputs[key].get());
-    $fclose(fd);
-endfunction
+        fd = pollFile(write_file, "w");
+        foreach (out_refs[key])
+            $fdisplay(fd, "%s:%0h", key, out_refs[key].get());
+        $fclose(fd);
+    endfunction
+
+endclass

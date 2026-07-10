@@ -50,8 +50,8 @@ module example;
 
         cycle = 0;
         forever begin
-            grabCommVals(cycle, comm.in_refs, delete_read_file);
-            writeCommVals(cycle, comm.out_refs);
+            comm.grabCommVals(cycle, delete_read_file);
+            comm.writeCommVals(cycle);
             cycle++;
             #5;
         end
