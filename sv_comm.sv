@@ -8,7 +8,7 @@ typedef logic [MAX_W-1:0] logic_max_t;
   * These will be used to communicate between the SV and IO
   * Needed to we can create a array of signals to reference
 */
-interface sig_interface #(int W = 1);
+interface sig_interface #(int unsigned W = 1);
     logic [W-1:0] value;
 endinterface
 
@@ -21,7 +21,12 @@ virtual class sig_ref_base;
 endclass
 
 
-class sig_ref #(int W = 1) extends sig_ref_base;
+/** You can either make the sig ref on its own using new or use the make call 
+  * While adding the ref to simplify creating more redudant sig names.
+  * 
+  * Interface manually with the references using put for inputs and get for outputs
+*/
+class sig_ref #(int unsigned W = 1) extends sig_ref_base;
 
   virtual sig_interface #(W) sig;
 
@@ -51,7 +56,6 @@ class sig_ref #(int W = 1) extends sig_ref_base;
   endfunction
 
 endclass
-
 
 
 
