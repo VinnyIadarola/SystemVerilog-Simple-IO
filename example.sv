@@ -23,7 +23,7 @@ module example;
     sig_interface #(1) c_if();
 
     sv_comm comm;
-    int cycle;
+    real cycle;
     bit delete_read_file = 0;
 
     adder #(
@@ -51,13 +51,16 @@ module example;
         cycle = 0;
 
         comm.grabCommVals(cycle, delete_read_file);
-        comm.writeCommVals(cycle);
+        comm.writeCommVals(cycle); // If file exists no time will pass;
         cycle++;
 
+        #1; // allow progration (replace time units with repeat @(posedge clk) or what not) 
+        comm.writeCommVals(cycle + 0.5);
 
-        #10 // wait will IO generates next cycles txt file (since its example we just wait but function polls)
+
+        #10; // wait will IO generates next cycles txt file (since its example we just wait but function polls)
         comm.grabCommVals(cycle, delete_read_file);
-        #10; // Allow results to propagate (replace time units with repeat @(posedge clk) or what not) 
+        #1; // propgation
         comm.writeCommVals(cycle);
         cycle++;
 

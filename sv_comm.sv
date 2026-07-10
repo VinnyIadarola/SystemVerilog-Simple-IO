@@ -64,7 +64,7 @@ endclass
 ***                Verif Helper Functions               ***
 **********************************************************/
 //to make portable between CLI and MoDELSIm
-string COMM_DIR_ABS_PATH = "ERR pls fill out";
+string COMM_DIR_ABS_PATH = "C:\\Users\\viada\\OneDrive\\Desktop\\Projects\\Interface Prototype\\comm_files\\";
 
 
 function automatic int findChar(string s, byte c);
@@ -113,8 +113,8 @@ class sv_comm;
         out_refs[name] = signal_ref;
     endfunction
 
-    function void grabCommVals(
-        int clk_cycle,
+    task automatic grabCommVals(
+        real clk_cycle,
         bit delete_read_file
     );
         string read_file;
@@ -125,28 +125,36 @@ class sv_comm;
         int idx;
         logic_max_t value;
 
-    
         read_file = $sformatf(
             "%s/IO_comm_cyc_%0d.txt",
             COMM_DIR_ABS_PATH,
             clk_cycle
         );
-        fd = pollFile(read_file, "r");
+
+        fd = 0;
+
+        while (fd == 0) begin
+            fd = $fopen(read_file, "r");
+
+            if (fd == 0)
+                #1ns;
+        end
 
         while ($fgets(line, fd) != 0) begin
             idx = findChar(line, ":");
+
             if (idx == -1) begin
                 $display("Skipping bad line with no colon: %s", line);
                 continue;
-            end 
+            end
 
-            key = line.substr(0, idx - 1);
+            key       = line.substr(0, idx - 1);
             value_str = line.substr(idx + 1, line.len() - 1);
-            value = value_str.atohex();
+            value     = value_str.atohex();
 
-            if(key == "END_OF_COMM" &&  value_str == "END_OF_COMM")
+            if ((key == "END_OF_COMM") &&
+                (value_str == "END_OF_COMM"))
                 $finish;
-
 
             if (in_refs.exists(key))
                 in_refs[key].put(value);
@@ -158,17 +166,17 @@ class sv_comm;
 
         if (delete_read_file)
             deleteOldFile(read_file);
-    endfunction
+    endtask
 
 
 
 
-    function void writeCommVals(int clk_cycle);
+    function void writeCommVals(real clk_cycle);
         string write_file;
         int fd;
 
         write_file = $sformatf(
-            "%s/sv_comm_cyc_%0d.txt",
+            "%s/sv_comm_cyc_%0g.txt",
             COMM_DIR_ABS_PATH, 
             clk_cycle
         );
