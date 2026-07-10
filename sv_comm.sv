@@ -1,6 +1,18 @@
-
+/**********************************************************
+***                 Custom Signal References            ***
+**********************************************************/
 parameter int MAX_W = 1024;
 typedef logic [MAX_W-1:0] logic_max_t;
+
+/** Instantiate each DUT in/out as a sig_interface type
+  * These will be used to communicate between the sv and cpp
+  * Needed to we can create a array of signals to reference
+*/
+interface sig_interface #(int W = 1);
+    logic [W-1:0] value;
+endinterface
+
+
 
 virtual class sig_ref_base;
     pure virtual function int unsigned width();
@@ -8,10 +20,6 @@ virtual class sig_ref_base;
     pure virtual function void put(logic_max_t value);
 endclass
 
-
-interface sig_interface #(int W = 1);
-    logic [W-1:0] value;
-endinterface
 
 class sig_ref #(int W = 1) extends sig_ref_base;
 
@@ -46,66 +54,32 @@ endclass
 
 
 
+/**********************************************************
+***                 String->Signal Map                  ***
+**********************************************************/
 typedef sig_ref_base ref_map_t[string];
 
-function automatic void grabCommVals(int clk_cycle, ref ref_map_t inputs);
-    string read_prefix = "cpp_comm_cyc_";
-    string read_suffix = ".txt";
-    string read_file;
-    int fd;
-    string line;
-    int idx;
-    string value_str;
-    string key;
-    int value;  
+class sv_comm;
+    ref_map_t in_refs;
+    ref_map_t out_refs;
 
-    /**************************************************
-    **                  Read arguments               **
-    **************************************************/
-    read_file = $sformatf("%s%0d%s", read_prefix, clk_cycle, read_suffix);
-    fd = pollFile(read_file, "r");
+    function void add_in(string name, sig_ref_base signal_ref);
+        in_refs[name] = signal_ref;
+    endfunction
 
-    while ($fgets(line, fd) != 0) begin
-        idx = findChar(line, ":");
-
-        if (idx == -1) begin
-            $display("Skipping bad line with no colon: %s", line);
-        end else begin
-            key = line.substr(0, idx - 1);
-            value_str = line.substr(idx + 1, line.len() - 1);
-            value = value_str.atohex();
-
-            inputs[key].put(value);
-        end
-    end
-
-    $fclose(fd);
-    deleteOldFile(read_file);
-    
-endfunction
-
-function automatic void writeCommVals(int clk_cycle, ref_map_t outs);
-    string write_prefix = "sv_comm_cyc_";
-    string write_suffix = ".txt";
-    string write_file;
-
-    int fd;
-   
-
-    /**************************************************
-    **                  Read arguments               **
-    **************************************************/
-    write_file = $sformatf("%s%0d%s", write_prefix, clk_cycle, write_suffix);
-    fd = pollFile(write_file, "w");
-
-    foreach(outs[key]) 
-        $fdisplay(fd, "%s:%h", key, outs[key].get());
+    function void add_out(string name, sig_ref_base signal_ref);
+        out_refs[name] = signal_ref;
+    endfunction
+endclass
 
 
-    $fclose(fd);
-    
-    
-endfunction
+/**********************************************************
+***                Verif Communication Control          ***
+**********************************************************/
+//to make portable between CLI and MoDELSIm
+string COMM_DIR_ABS_PATH = "ERR pls fill out";
+
+
 
 
 function automatic int findChar(string s, byte c);
@@ -113,66 +87,88 @@ function automatic int findChar(string s, byte c);
         if (s.getc(i) == c)
             return i;
     end
-
     return -1;
 endfunction
 
 
 function automatic int pollFile(string file, string mode);
     int fd;
-    
-    while(fd == 0) 
+    while (fd == 0)
         fd = $fopen(file, mode);
-
     return fd;
-
 endfunction
 
 
 function automatic void deleteOldFile(string file);
     int status;
-
     `ifdef WINDOWS
-        status = $system("del /Q .txt");
+        status = $system($sformatf("del /Q \"%s%s\"", COMM_DIR_ABS_PATH, file));
     `else
-        status = $system("rm -f temp.txt");
+        status = $system($sformatf("rm -f \"%s%s\"", COMM_DIR_ABS_PATH, file));
     `endif
-
     if (status != 0)
         $warning("Could not delete %s", file);
+endfunction
 
+
+function automatic void grabCommVals(
+    int clk_cycle,
+    ref ref_map_t inputs,
+    bit delete_read_file
+);
+    string read_file;
+    string line;
+    string value_str;
+    string key;
+    int fd;
+    int idx;
+    logic_max_t value;
+
+ 
+    read_file = $sformatf(
+        "%s/cpp_comm_cyc_%0d.txt",
+        COMM_DIR_ABS_PATH,
+        clk_cycle
+    );
+    fd = pollFile(read_file, "r");
+
+    while ($fgets(line, fd) != 0) begin
+        idx = findChar(line, ":");
+        if (idx == -1) begin
+            $display("Skipping bad line with no colon: %s", line);
+            continue;
+        end 
+
+        key = line.substr(0, idx - 1);
+        value_str = line.substr(idx + 1, line.len() - 1);
+        value = value_str.atohex();
+        if (inputs.exists(key))
+            inputs[key].put(value);
+        else
+            $warning("Ignoring unknown input signal '%s'", key);
+    end
+
+    $fclose(fd);
+
+    if (delete_read_file)
+        deleteOldFile(read_file);
 endfunction
 
 
 
-module sv_comm;
 
-    int clk_cycle;
+function automatic void writeCommVals(int clk_cycle, ref_map_t outputs);
+    string write_file;
+    int fd;
 
+    write_file = $sformatf(
+        "%s/sv_comm_cyc_%0d.txt",
+        COMM_DIR_ABS_PATH, 
+        clk_cycle
+    );
 
-    /**************************************************
-    **                                               **
-    **************************************************/
-
-    sig_interface #(8)  a_if();
-    sig_interface #(32) b_if();
-
-    sig_ref_base refs[string];
-
-    initial begin
-        clk_cycle = 0;
-
-        refs["a"] = new sig_ref #(8)::make(a_if);
-        refs["b"] = new sig_ref #(32)::make(b_if);
-
-
-
-        refs["a"].put(8'hA5);
-        refs["b"].put(32'hDEADBEEF);
-
-        $display("a = %0h", refs["a"].get());
-        $display("b = %0h", refs["b"].get());
-    end
-
-endmodule
-
+    fd = pollFile(write_file, "w");
+    foreach (outputs[key])
+        $fdisplay(fd, "%s:%0h", key, outputs[key].get());
+    $fclose(fd);
+endfunction
