@@ -54,19 +54,13 @@ endclass
 
 
 
-/**********************************************************
-***                 String->Signal Map                  ***
-**********************************************************/
-typedef sig_ref_base ref_map_t[string];
 
 
 /**********************************************************
-***                Verif Communication Control          ***
+***                Verif Helper Functions               ***
 **********************************************************/
 //to make portable between CLI and MoDELSIm
 string COMM_DIR_ABS_PATH = "ERR pls fill out";
-
-
 
 
 function automatic int findChar(string s, byte c);
@@ -98,7 +92,12 @@ function automatic void deleteOldFile(string file);
 endfunction
 
 
+/**********************************************************
+***                Verif Comm Controller                ***
+**********************************************************/
 class sv_comm;
+    typedef sig_ref_base ref_map_t[string];
+
     ref_map_t in_refs;
     ref_map_t out_refs;
 
