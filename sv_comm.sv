@@ -65,6 +65,7 @@ endclass
 **********************************************************/
 //to make portable between CLI and MoDELSIm
 string COMM_DIR_ABS_PATH = "ERR pls replace with your abs path";
+string END_COMM_SIG = "END_OF_COMM";
 
 
 function automatic int findChar(string s, byte c);
@@ -152,8 +153,8 @@ class sv_comm;
             value_str = line.substr(idx + 1, line.len() - 1);
             value     = value_str.atohex();
 
-            if ((key == "END_OF_COMM") &&
-                (value_str == "END_OF_COMM"))
+            if ((key == END_COMM_SIG) &&
+                (value_str == END_COMM_SIG))
                 $finish;
 
             if (in_refs.exists(key))
