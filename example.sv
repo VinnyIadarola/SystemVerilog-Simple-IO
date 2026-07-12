@@ -43,10 +43,10 @@ module example;
         comm = new();
 
         // Add Dut signals we want to track
-        comm.add_in("a", sig_ref #(W)::make(a_if));
-        comm.add_in("b", sig_ref #(W)::make(b_if));
-        comm.add_out("s", sig_ref #(W)::make(s_if));
-        comm.add_out("c", sig_ref #(1)::make(c_if));
+        comm.addIn("a", sig_ref #(W)::make(a_if));
+        comm.addIn("b", sig_ref #(W)::make(b_if));
+        comm.addOut("s", sig_ref #(W)::make(s_if));
+        comm.addOut("c", sig_ref #(1)::make(c_if));
 
         cycle = 0;
 

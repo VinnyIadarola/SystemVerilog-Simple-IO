@@ -65,6 +65,7 @@ endclass
 **********************************************************/
 //to make portable between CLI and MoDELSIm
 string COMM_DIR_ABS_PATH = "ERR pls replace with your abs path";
+string END_COMM_SIG = "END_OF_COMM";
 
 
 function automatic int findChar(string s, byte c);
@@ -105,11 +106,11 @@ class sv_comm;
     ref_map_t in_refs;
     ref_map_t out_refs;
 
-    function void add_in(string name, sig_ref_base signal_ref);
+    function void addIn(string name, sig_ref_base signal_ref);
         in_refs[name] = signal_ref;
     endfunction
 
-    function void add_out(string name, sig_ref_base signal_ref);
+    function void addOut(string name, sig_ref_base signal_ref);
         out_refs[name] = signal_ref;
     endfunction
 
@@ -152,8 +153,8 @@ class sv_comm;
             value_str = line.substr(idx + 1, line.len() - 1);
             value     = value_str.atohex();
 
-            if ((key == "END_OF_COMM") &&
-                (value_str == "END_OF_COMM"))
+            if ((key == END_COMM_SIG) &&
+                (value_str == END_COMM_SIG))
                 $finish;
 
             if (in_refs.exists(key))
