@@ -177,7 +177,7 @@ class sv_comm;
         int fd;
 
         write_file = $sformatf(
-            "%s/sv_comm_cyc_%0g.txt",
+            "%s/SV_comm_cyc_%0g.txt",
             COMM_DIR_ABS_PATH, 
             clk_cycle
         );

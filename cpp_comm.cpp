@@ -39,7 +39,7 @@ public:
 
 
     int grabCommVals(bool deleteFile) {
-        std::string input_file = format(COMM_FILE_FORMAT, "SV", curr_cycle);
+        std::string input_file = std::format(COMM_FILE_FORMAT, COMM_DIRECTORY, DIR_SEPARATOR, "SV", curr_cycle);
         std::ifstream file(input_file);
         while(!file.is_open()) std::this_thread::sleep_for(std::chrono::milliseconds(500));
         
@@ -67,7 +67,7 @@ public:
 
 
     int writeCommVals() {
-        std::ofstream file(format(COMM_FILE_FORMAT, "IO", curr_cycle));
+        std::ofstream file(std::format(COMM_FILE_FORMAT, COMM_DIRECTORY, DIR_SEPARATOR, "IO", curr_cycle));
         if(!file.is_open()) return 1;
 
          for(auto &[signal, value] : inputs_to_DUT) {
@@ -79,7 +79,7 @@ public:
     }
 
     int endCommunication() {
-        std::ofstream file(format(COMM_FILE_FORMAT, "IO", curr_cycle));
+        std::ofstream file(std::format(COMM_FILE_FORMAT, COMM_DIRECTORY, DIR_SEPARATOR, "IO", curr_cycle));
         if(!file.is_open()) return 1;
 
         file << END_COMM_SIG << ":" << END_COMM_SIG << std::endl; 
@@ -95,7 +95,9 @@ private:
     std::unordered_map<std::string, int*> inputs_to_DUT;
     std::unordered_map<std::string, int*> outputs_from_DUT;
     std::string comm_directory;
-    constexpr static const char* COMM_FILE_FORMAT = "{}_comm_cycle_{}.txt";
+    constexpr static const char DIR_SEPARATOR = std::filesystem::path::preferred_separator;
+    constexpr static const char* COMM_DIRECTORY = "comm_files";
+    constexpr static const char* COMM_FILE_FORMAT = "{}{}{}_comm_cyc_{}.txt";
     constexpr static const char* END_COMM_SIG = "END_OF_COMM";
 
 
