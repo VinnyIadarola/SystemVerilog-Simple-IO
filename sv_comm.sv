@@ -105,11 +105,11 @@ class sv_comm;
     ref_map_t in_refs;
     ref_map_t out_refs;
 
-    function void add_in(string name, sig_ref_base signal_ref);
+    function void addIn(string name, sig_ref_base signal_ref);
         in_refs[name] = signal_ref;
     endfunction
 
-    function void add_out(string name, sig_ref_base signal_ref);
+    function void addOut(string name, sig_ref_base signal_ref);
         out_refs[name] = signal_ref;
     endfunction
 
