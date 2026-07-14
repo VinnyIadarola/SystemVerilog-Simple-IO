@@ -3,6 +3,8 @@
 
 const int W = 4;
 const bool delete_read_file = false;
+const int LARGE_CYCLE = 100;
+const int END_CYCLE = 3;
 
 int add(int a, int b) {
   return a + b;
@@ -76,9 +78,31 @@ int main() {
     if (s != expected_s)
       std::cout << "Mismatched s value " << std::hex << s << " differs from expected " << expected_s << std::endl; 
     return 1;
+  } 
+ 
+  // Setting cycle number to a number that won't be used otherwise, to ensure no file is present
+  cycle = comm.nextCycle(LARGE_CYCLE);
+
+  // Atomic variable to check if thread completed grabCommVals, captured by reference
+  std::atomic<bool> received(false);
+
+  std::thread poll_thread([&comm, &received](){
+      comm.grabCommVals(delete_read_file);
+      received = true;
+    });
+
+  if (poll_thread.joinable()) {
+    poll_thread.detach();
   }
 
-  cycle = comm.nextCycle();
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+  if (received) { 
+    std::cout << "Received unintended SV comm in cycle " << LARGE_CYCLE << std::endl;
+    return 1;
+  }
+
+  cycle = comm.nextCycle(END_CYCLE);
   if (comm.endCommunication() == 1) {
     std::cout << "Could not end communication in cycle " << cycle << std::endl;
     return 1;
